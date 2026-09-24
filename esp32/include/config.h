@@ -1,0 +1,16 @@
+#pragma once
+
+// Copy this file to config.h and fill in the real values.
+// config.h must NOT go into the Git repo (add it to .gitignore).
+
+// WiFi credentials
+#define WIFI_SSID     "YOUR_WIFI_NAME"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+// REST endpoint of the backend (see backend/main.py)
+#define API_ENDPOINT  "http://192.168.1.100/openservicemeter/vote"
+#define API_KEY       "CHANGEME"
+
+// Unique device identification, different for each box
+#define DEVICE_ID     "meter-01"
+#define LOCATION      "Reception"
