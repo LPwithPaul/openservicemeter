@@ -1,0 +1,120 @@
+{
+  "title": "OpenServiceMeter",
+  "uid": "openservicemeter",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-7d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "device_id",
+        "type": "query",
+        "label": "Gerät",
+        "datasource": "openservicemeter",
+        "query": "SELECT DISTINCT device_id FROM openservicemeter_votes ORDER BY 1",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Votes by rating",
+      "type": "piechart",
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 0 },
+      "datasource": "openservicemeter",
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT\n  CASE value WHEN 'green' THEN 'Good' WHEN 'yellow' THEN 'Neutral' WHEN 'red' THEN 'Bad' ELSE value END AS metric,\n  COUNT(*) AS value\nFROM openservicemeter_votes\nWHERE $__timeFilter(device_timestamp)\n  AND device_id IN (${device_id:sqlstring})\nGROUP BY value\nORDER BY value;",
+          "rawQuery": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Good" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } } ] },
+          { "matcher": { "id": "byName", "options": "Neutral" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } } ] },
+          { "matcher": { "id": "byName", "options": "Bad" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } } ] }
+        ]
+      },
+      "options": {
+        "displayLabels": ["name", "percent"],
+        "legend": { "displayMode": "list", "placement": "right", "showLegend": true },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": [], "fields": "", "values": true }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Votes over time",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 16, "x": 8, "y": 0 },
+      "datasource": "openservicemeter",
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT\n  date_trunc('hour', device_timestamp) AS time,\n  CASE value WHEN 'green' THEN 'Good' WHEN 'yellow' THEN 'Neutral' WHEN 'red' THEN 'Bad' ELSE value END AS metric,\n  COUNT(*) AS value\nFROM openservicemeter_votes\nWHERE $__timeFilter(device_timestamp)\n  AND device_id IN (${device_id:sqlstring})\nGROUP BY 1, value\nORDER BY 1;",
+          "rawQuery": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "stacking": { "mode": "normal", "group": "A" }, "fillOpacity": 80 },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Good" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } } ] },
+          { "matcher": { "id": "byName", "options": "Neutral" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } } ] },
+          { "matcher": { "id": "byName", "options": "Bad" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } } ] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Raw votes",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 9 },
+      "datasource": "openservicemeter",
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT\n  device_timestamp AS \"Time\",\n  device_id AS \"Device\",\n  location AS \"Location\",\n  CASE value WHEN 'green' THEN 'Good' WHEN 'yellow' THEN 'Neutral' WHEN 'red' THEN 'Bad' ELSE value END AS \"Value\",\n  queued AS \"Queued\"\nFROM openservicemeter_votes\nWHERE $__timeFilter(device_timestamp)\n  AND device_id IN (${device_id:sqlstring})\nORDER BY device_timestamp DESC\nLIMIT 500;",
+          "rawQuery": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "left" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "Good": { "color": "green", "index": 0 } } },
+                  { "type": "value", "options": { "Neutral": { "color": "yellow", "index": 1 } } },
+                  { "type": "value", "options": { "Bad": { "color": "red", "index": 2 } } }
+                ]
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+            ]
+          }
+        ]
+      },
+      "options": { "showHeader": true }
+    }
+  ]
+}
