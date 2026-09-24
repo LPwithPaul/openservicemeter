@@ -5,18 +5,31 @@ import os
 
 app = FastAPI()
 
-# --- ENV-Toggles ---
+# --- ENV toggles ---
 LOG_ENABLED = os.environ.get("LOG_ENABLED", "true").lower() == "true"
 SQL_WRITE_ENABLED = os.environ.get("SQL_WRITE_ENABLED", "false").lower() == "true"
 
-# Pro Gerät ein eigener API-Key, damit sich einzelne Boxen sperren lassen
-API_KEYS = {
-    "CHANGEME": "meter-01",
-    # "ZWEITER_API_KEY": "meter-02",
-}
+# One API key per device, so individual boxes can be revoked.
+# Format of the API_KEYS env variable: "key1:device_id1,key2:device_id2,..."
+def parse_api_keys(raw: str) -> dict[str, str]:
+    keys: dict[str, str] = {}
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        key, sep, device_id = entry.partition(":")
+        if not sep:
+            raise ValueError(f"Invalid API_KEYS entry (no ':' found): {entry!r}")
+        keys[key] = device_id
+    if not keys:
+        raise ValueError("API_KEYS is empty or not set")
+    return keys
 
-# psycopg2 nur importieren/verbinden, wenn SQL-Write tatsächlich aktiv ist -
-# dann ist PG_CONN_STR auch erst Pflicht.
+
+API_KEYS = parse_api_keys(os.environ["API_KEYS"])
+
+# Only import/connect psycopg2 if SQL write is actually enabled -
+# only then is PG_CONN_STR required.
 if SQL_WRITE_ENABLED:
     import psycopg2
     PG_CONN_STR = os.environ["PG_CONN_STR"]
@@ -28,9 +41,9 @@ if SQL_WRITE_ENABLED:
 class Vote(BaseModel):
     device_id: str
     location: str
-    value: str = Field(pattern="^(green|yellow|red)$")
+    value: str = Field(pattern="^(gruen|gelb|rot)$")
     timestamp: str
-    queued: bool = False  # true = vom ESP aus der Retry-Queue nachgeliefert, nicht live geklickt
+    queued: bool = False  # true = delivered by the ESP from its retry queue, not a live click
 
 
 def log_vote(vote: Vote, received_at: datetime, db_written: bool):
@@ -47,14 +60,14 @@ def log_vote(vote: Vote, received_at: datetime, db_written: bool):
 @app.post("/vote")
 def receive_vote(vote: Vote, x_api_key: str = Header(...)):
     if x_api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API-Key")
+        raise HTTPException(status_code=401, detail="Invalid API key")
     if API_KEYS[x_api_key] != vote.device_id:
-        raise HTTPException(status_code=403, detail="API-Key does not match the device_id")
+        raise HTTPException(status_code=403, detail="API key does not match device_id")
 
     try:
         device_ts = datetime.fromisoformat(vote.timestamp.replace("Z", "+00:00"))
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid time format")
+        raise HTTPException(status_code=400, detail="Invalid timestamp format")
 
     received_at = datetime.now(timezone.utc)
     db_written = False

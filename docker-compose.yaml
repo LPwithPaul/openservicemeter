@@ -17,6 +17,7 @@ services:
       LOG_ENABLED: "true"          # Konsolen-Logging pro empfangener Stimme an/aus
       SQL_WRITE_ENABLED: "true"    # DB-Schreiben an/aus
       PG_CONN_STR: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@openservicemeter-db:5432/${POSTGRES_DB}"
+      API_KEYS: "${API_KEYS}"
     ports:
       - "8000:8000"
     depends_on:
