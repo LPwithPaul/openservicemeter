@@ -19,7 +19,7 @@ services:
       PG_CONN_STR: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@openservicemeter-db:5432/${POSTGRES_DB}"
       API_KEYS: "${API_KEYS}"
     ports:
-      - "8000:8000"
+      - "${API_PORT}:8000"
     depends_on:
       - openservicemeter-db
 
