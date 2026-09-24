@@ -8,7 +8,7 @@
 #define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
 
 // REST endpoint of the backend (see backend/main.py)
-#define API_ENDPOINT  "http://192.168.1.100/openservicemeter/vote"
+#define API_ENDPOINT  "http://192.168.1.100:8091/vote"
 #define API_KEY       "CHANGEME"
 
 // Unique device identification, different for each box
