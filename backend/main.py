@@ -41,7 +41,7 @@ if SQL_WRITE_ENABLED:
 class Vote(BaseModel):
     device_id: str
     location: str
-    value: str = Field(pattern="^(gruen|gelb|rot)$")
+    value: str = Field(pattern="^(green|yellow|red)$")
     timestamp: str
     queued: bool = False  # true = delivered by the ESP from its retry queue, not a live click
 
