@@ -1,0 +1,35 @@
+# Diesen Service in die bestehende docker-compose.yml auf dem Docker-Host einfügen
+# und hinter Caddy als Reverse Proxy mit TLS veröffentlichen.
+#
+# stimmungsbarometer-db ist eine eigene, dedizierte Postgres-Instanz nur für
+# dieses Projekt - kein Testservice, den man später wieder entfernt.
+
+services:
+  openservicemeter-api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      LOG_ENABLED: "true"          # Konsolen-Logging pro empfangener Stimme an/aus
+      SQL_WRITE_ENABLED: "true"    # DB-Schreiben an/aus
+      PG_CONN_STR: "postgresql://openservicemeter:CHANGEME@openservicemeter-db:5432/openservicemeter"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - openservicemeter-db
+
+  openservicemeter-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "openservicemeter"
+      POSTGRES_PASSWORD: "CHANGEME"
+      POSTGRES_DB: "openservicemeter"
+    volumes:
+      - openservicemeter-db-data:/var/lib/postgresql/data
+    # Port nach außen ist optional - nur nötig, wenn du z.B. mit einem
+    # externen SQL-Client oder Grafana direkt von außen auf die DB willst.
+    ports:
+      - "5432:5432"
+
+volumes:
+  openservicemeter-db-data:
